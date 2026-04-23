@@ -1,0 +1,30 @@
+# virtual environment
+.venv/
+venv/
+env/
+
+# python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# jupyter checkpoints
+.ipynb_checkpoints/
+
+# data files (too large for git)
+data/
+*.xls
+*.xlsx
+
+# saved models (too large for git)
+saved_models/
+*.keras
+*.h5
+*.pkl
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
