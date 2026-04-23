@@ -37,8 +37,6 @@ cos30019_assignment2_b/
 pip install -r requirements.txt
 ```
 
-3. Place `Scats Data October 2006.xls` inside the `data/` folder
-
 ---
 
 ## Running

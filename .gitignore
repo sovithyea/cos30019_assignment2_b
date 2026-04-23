@@ -11,11 +11,6 @@ __pycache__/
 # jupyter checkpoints
 .ipynb_checkpoints/
 
-# data files (too large for git)
-data/
-*.xls
-*.xlsx
-
 # saved models (too large for git)
 saved_models/
 *.keras
