@@ -42,4 +42,4 @@ def run_gru(X_train, X_test, y_train, y_test, scalers):
     print("GRU MAE:", mae)
     print("GRU RMSE:", rmse)    
     
-    return predictions
+    return mae, rmse

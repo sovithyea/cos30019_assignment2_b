@@ -40,4 +40,4 @@ def run_lstm(X_train, X_test, y_train, y_test, scalers):
     print("LSTM MAE:", mae)
     print("LSTM RMSE:", rmse)
 
-    return predictions_scaled, y_test
+    return mae, rmse
