@@ -1,15 +1,11 @@
 import numpy as np
-import matplotlib.pyplot as plt
-
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
 from tensorflow.keras import Input
 from tensorflow.keras.callbacks import EarlyStopping
-
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 def run_lstm(X_train, X_test, y_train, y_test, scalers):
-
     model = Sequential()
     model.add(Input(shape=(12, 1)))
     model.add(LSTM(50))
@@ -23,7 +19,7 @@ def run_lstm(X_train, X_test, y_train, y_test, scalers):
         restore_best_weights=True
     )
 
-    model.fit(
+    history = model.fit(
         X_train,
         y_train,
         epochs=30,
@@ -40,4 +36,4 @@ def run_lstm(X_train, X_test, y_train, y_test, scalers):
     print("LSTM MAE:", mae)
     print("LSTM RMSE:", rmse)
 
-    return mae, rmse
+    return model, predictions_scaled, history, mae, rmse
