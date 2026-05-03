@@ -2,6 +2,40 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
+def plot_daily_prediction(results, y_test, scalers):
+    # inverse transform predictions and actual back to real vehicle counts
+    any_scaler = list(scalers.values())[0]
+    actual_real = any_scaler.inverse_transform(y_test.reshape(-1, 1)).flatten()
+
+    # generate time labels for one full day (96 intervals of 15 min)
+    times = [f'{h:02d}:{m:02d}' for h in range(24) for m in (0, 15, 30, 45)]
+
+    # use one full day worth of test data (96 steps)
+    one_day = 96
+    actual_day = actual_real[:one_day]
+
+    plt.figure(figsize=(14, 5))
+    plt.plot(times, actual_day, label='True Data', color='blue', alpha=0.7)
+
+    colors = ['orange', 'green', 'red', 'purple']
+    for r, color in zip(results, colors):
+        preds_real = any_scaler.inverse_transform(r['predictions'].reshape(-1, 1)).flatten()
+        plt.plot(times, preds_real[:one_day], label=r['name'], color=color, alpha=0.85)
+
+    # only show every 8th label so x axis isn't crowded
+    ax = plt.gca()
+    ax.set_xticks(range(0, 96, 8))
+    ax.set_xticklabels(times[::8], rotation=45)
+
+    plt.title('Traffic Flow Prediction vs True Data (One Day)')
+    plt.xlabel('Time of Day')
+    plt.ylabel('Flow (vehicles/15min)')
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig('plots/daily_prediction.png', dpi=150)
+    plt.show()
+    print('Saved plots/daily_prediction.png')
+
 def evaluate_all(results, y_test, scalers):
     # use any scaler to inverse transform back to real vehicle counts
     # all sites are normalised the same way so any scaler works as a reference
@@ -70,3 +104,6 @@ def evaluate_all(results, y_test, scalers):
     plt.tight_layout()
     plt.savefig('plots/predictions.png', dpi=150)
     plt.show()
+
+    # daily prediction plot comparing all models against true data
+    plot_daily_prediction(results, y_test, scalers)
