@@ -1,5 +1,7 @@
 xlrd
 numpy
+os
+pickle
 pandas
 scikit-learn
 tensorflow

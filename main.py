@@ -1,3 +1,5 @@
+import os
+import pickle
 from preprocessing import build_dataset
 from models.lstm import run_lstm
 from models.gru import run_gru
@@ -21,10 +23,16 @@ print("\nModel Results")
 print("LSTM -> MAE:", round(lstm_mae, 5), "| RMSE:", round(lstm_rmse, 5))
 print("GRU  -> MAE:", round(gru_mae, 5), "| RMSE:", round(gru_rmse, 5))
 
-# evaluate and plot all models
+# evaluate and compare all models
 results = [
     {'name': 'LSTM', 'predictions': lstm_preds, 'history': lstm_history, 'mae': lstm_mae, 'rmse': lstm_rmse},
     {'name': 'GRU', 'predictions': gru_preds, 'history': gru_history, 'mae': gru_mae, 'rmse': gru_rmse},
 ]
 
 evaluate_all(results, y_test, scalers)
+
+# save scalers so they can be loaded later without reprocessing
+os.makedirs('saved_models', exist_ok=True)
+with open('saved_models/scalers.pkl', 'wb') as f:
+    pickle.dump(scalers, f)
+print('Saved saved_models/scalers.pkl')

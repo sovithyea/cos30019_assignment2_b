@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
@@ -6,6 +7,7 @@ from tensorflow.keras.callbacks import EarlyStopping
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 def run_lstm(X_train, X_test, y_train, y_test, scalers):
+
     model = Sequential()
     model.add(Input(shape=(12, 1)))
     model.add(LSTM(50))
@@ -19,6 +21,7 @@ def run_lstm(X_train, X_test, y_train, y_test, scalers):
         restore_best_weights=True
     )
 
+    # train the model, save history for loss curve plots
     history = model.fit(
         X_train,
         y_train,
@@ -28,12 +31,18 @@ def run_lstm(X_train, X_test, y_train, y_test, scalers):
         callbacks=[early_stop]
     )
 
-    predictions_scaled = model.predict(X_test)
+    predictions = model.predict(X_test)
 
-    mae = mean_absolute_error(y_test, predictions_scaled)
-    rmse = np.sqrt(mean_squared_error(y_test, predictions_scaled))
+    mae = mean_absolute_error(y_test, predictions)
+    rmse = np.sqrt(mean_squared_error(y_test, predictions))
 
     print("LSTM MAE:", mae)
     print("LSTM RMSE:", rmse)
 
-    return model, predictions_scaled, history, mae, rmse
+    # save trained model so it can be loaded later without retraining
+    os.makedirs('saved_models', exist_ok=True)
+    model.save('saved_models/lstm_model.h5')
+    print("Saved saved_models/lstm_model.h5")
+
+    # return model and history so evaluate.py can plot loss curves and predictions
+    return model, predictions, history, mae, rmse

@@ -1,3 +1,4 @@
+import os
 import xlrd
 import numpy as np
 import pandas as pd
@@ -21,12 +22,12 @@ def load_raw(filepath):
         # column 9 is the date stored as an Excel serial number, convert to real date
         dt = xlrd.xldate_as_datetime(row[9], wb.datemode).date()
         rows.append({
-            'scats_id': str(row[0]).strip(),   # intersection ID e.g. '2000'
-            'location': str(row[1]).strip(),   # road name e.g. 'WARRIGAL_RD N of TOORAK_RD'
-            'lat': float(row[3]),              # latitude
-            'lon': float(row[4]),              # longitude
-            'date': dt,                        # date of this reading
-            'readings': [float(v) for v in row[10:106]]  # 96 traffic counts for the day
+            'scats_id': str(row[0]).strip(),
+            'location': str(row[1]).strip(),
+            'lat': float(row[3]),
+            'lon': float(row[4]),
+            'date': dt,
+            'readings': [float(v) for v in row[10:106]]
         })
     return rows
 
@@ -43,7 +44,7 @@ def build_aggregated_df(rows):
                 'lat': row['lat'],
                 'lon': row['lon'],
                 'date': row['date'],
-                'interval': i,    # 0-95, each 15-min slot in the day
+                'interval': i,
                 'flow': val
             })
     df = pd.DataFrame(records)
@@ -106,7 +107,7 @@ def build_dataset(filepath, lookback=LOOKBACK, horizon=HORIZON, test_days=TEST_D
         # different sites have very different traffic volumes so we scale per site
         scaler = MinMaxScaler(feature_range=(0, 1))
         scaled = scaler.fit_transform(values).flatten()
-        scalers[site_id] = scaler  # save scaler to inverse transform predictions later
+        scalers[site_id] = scaler
 
         # split values and dates by the cutoff date
         train_mask = [d < cutoff for d in date_per_step]
@@ -134,4 +135,5 @@ def build_dataset(filepath, lookback=LOOKBACK, horizon=HORIZON, test_days=TEST_D
 
     print(f'X_train: {X_train.shape}, X_test: {X_test.shape}')
     print(f'Sites: {len(scalers)}, zero values in raw data: {(agg["flow"]==0).sum()}')
+
     return X_train, X_test, y_train, y_test, scalers, coords, agg
