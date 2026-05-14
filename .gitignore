@@ -11,12 +11,6 @@ __pycache__/
 # jupyter checkpoints
 .ipynb_checkpoints/
 
-# saved models (too large for git)
-saved_models/
-*.keras
-*.h5
-*.pkl
-
 # VS Code
 .vscode/
 
