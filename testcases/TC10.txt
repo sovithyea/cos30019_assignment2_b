@@ -1,0 +1,9 @@
+# TC10
+# Scenario: Route across central network section
+# Purpose: Verify routing through intermediate SCATS sites and calculate travel time.
+
+Origin:
+3001
+
+Destinations:
+4034

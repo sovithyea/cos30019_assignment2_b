@@ -1,0 +1,9 @@
+# TC09
+# Scenario: Route from HIGH_ST to BURKE_RD corridor
+# Purpose: Verify routing across multiple intersections using predicted traffic conditions.
+
+Origin:
+3001
+
+Destinations:
+4035

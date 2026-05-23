@@ -1,0 +1,9 @@
+# TC06
+# Scenario: Long multi-hop route across BALWYN_RD corridor
+# Purpose: Verify the system handles long routes and estimates travel time across multiple segments.
+
+Origin:
+3127
+
+Destinations:
+3180

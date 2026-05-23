@@ -1,0 +1,9 @@
+# TC05
+# Scenario: Multi-hop route along BALWYN_RD
+# Purpose: Verify routing across multiple connected SCATS sites while using predicted traffic travel time.
+
+Origin:
+3127
+
+Destinations:
+4057

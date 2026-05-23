@@ -1,0 +1,9 @@
+# TC12
+# Scenario: Route from BARKERS_RD to northern corridor
+# Purpose: Verify routing across multiple road segments while considering predicted traffic flow.
+
+Origin:
+3001
+
+Destinations:
+4030

@@ -1,0 +1,21 @@
+# Test Configuration
+
+Models Tested:
+- LSTM
+- GRU
+- CNN
+
+Input Files:
+- final_nodes.csv
+- final_edges.csv
+- travel_cost.csv
+
+Common Expected Results:
+1. System returns route results.
+2. Travel time uses predicted traffic flow.
+3. Results generated for all models.
+4. Route starts from origin node.
+5. Route ends at destination node.
+
+All test cases use the same graph.
+Only origin and destination change.

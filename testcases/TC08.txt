@@ -1,0 +1,9 @@
+# TC08
+# Scenario: Short route on BARKERS_RD corridor
+# Purpose: Verify routing for neighbouring nodes
+
+Origin:
+3001
+
+Destinations:
+3002

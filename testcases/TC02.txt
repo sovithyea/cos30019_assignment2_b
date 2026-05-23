@@ -1,0 +1,9 @@
+# TC02
+# Scenario: Reverse direction of TC01
+# Purpose: Verify routing works correctly in the opposite direction
+
+Origin:
+4063
+
+Destinations:
+3127

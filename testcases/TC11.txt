@@ -1,0 +1,9 @@
+# TC11
+# Scenario: Extended route along BURKE_RD corridor
+# Purpose: Verify routing performance on longer paths using travel cost generated from predicted flow.
+
+Origin:
+3001
+
+Destinations:
+4032

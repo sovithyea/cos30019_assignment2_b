@@ -1,0 +1,9 @@
+# TC13
+# Scenario: Extended route in BARKERS_RD corridor
+# Purpose: Verify routing across a long connected path using traffic-based travel cost.
+
+Origin:
+3001
+
+Destinations:
+2825

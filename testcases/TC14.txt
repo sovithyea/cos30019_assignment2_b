@@ -1,0 +1,9 @@
+# TC14
+# Scenario: Invalid origin node
+# Purpose: Verify system handles unavailable start nodes
+
+Origin:
+9999
+
+Destinations:
+3127

@@ -1,0 +1,9 @@
+# TC15
+# Scenario: Invalid destination node
+# Purpose: Verify system handles unavailable destination nodes
+
+Origin:
+3127
+
+Destinations:
+9999

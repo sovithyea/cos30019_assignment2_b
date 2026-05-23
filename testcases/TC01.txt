@@ -1,0 +1,9 @@
+# TC01
+# Scenario: Short route between directly connected SCATS sites
+# Purpose: Verify the routing system generates a valid route and calculates travel time using predicted traffic flow.
+
+Origin:
+3127
+
+Destinations:
+4063

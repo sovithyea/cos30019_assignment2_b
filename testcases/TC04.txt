@@ -1,0 +1,9 @@
+# TC04
+# Scenario: Route to DONCASTER_RD area
+# Purpose: Verify routing between adjacent nodes on the eastern corridor
+
+Origin:
+4057
+
+Destinations:
+3180

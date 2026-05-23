@@ -1,0 +1,9 @@
+# TC07
+# Scenario: Reverse direction of TC06
+# Purpose: Verify long-path routing in opposite direction
+
+Origin:
+3180
+
+Destinations:
+3127
