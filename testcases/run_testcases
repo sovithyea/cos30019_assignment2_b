@@ -2,7 +2,7 @@ from pathlib import Path
 import re
 import sys
 
-# Allow import from the project root when running this file directly
+# Allow imports from the project root when this script is run directly.
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -12,61 +12,74 @@ from graph.cus1 import find_routes, format_routes
 TESTCASE_FOLDER = Path(__file__).resolve().parent
 
 
-def read_testcase(file_path: Path) -> tuple[str, str]:
-    # Read origin and destination from one testcase file
+def read_testcase(file_path: Path) -> tuple[str, str, str]:
+    """Read Origin, Destination and Departure from one testcase file."""
     content = file_path.read_text(encoding="utf-8")
 
-    origin_match = re.search(
+    origin = re.search(
         r"^Origin:\s*\n\s*(\S+)",
         content,
         flags=re.MULTILINE,
     )
 
-    destination_match = re.search(
+    destination = re.search(
         r"^Destination:\s*\n\s*(\S+)",
         content,
         flags=re.MULTILINE,
     )
 
-    if origin_match is None or destination_match is None:
+    departure = re.search(
+        r"^Departure:\s*\n\s*(\S+)",
+        content,
+        flags=re.MULTILINE,
+    )
+
+    if origin is None or destination is None or departure is None:
         raise ValueError(
-            f"{file_path.name} must contain Origin and Destination."
+            f"{file_path.name} must contain Origin, Destination and Departure."
         )
 
-    return origin_match.group(1), destination_match.group(1)
+    return (
+        origin.group(1),
+        destination.group(1),
+        departure.group(1),
+    )
 
 
 def main() -> None:
+    """Run every testcase and print detailed route calculations."""
     testcase_files = sorted(TESTCASE_FOLDER.glob("TC*.txt"))
 
     if not testcase_files:
         raise FileNotFoundError("No testcase files found in the testcases folder.")
 
     for testcase_file in testcase_files:
-        print("=" * 70)
+        print("=" * 90)
         print(testcase_file.stem)
 
         try:
-            origin, destination = read_testcase(testcase_file)
+            origin, destination, departure = read_testcase(testcase_file)
 
-            print(f"Origin: {origin}")
+            print(f"Origin:      {origin}")
             print(f"Destination: {destination}")
+            print(f"Departure:   {departure}")
             print()
 
             routes = find_routes(
                 origin=origin,
                 destination=destination,
+                departure_time=departure,
                 k=5,
             )
 
-            print(format_routes(routes))
+            print(format_routes(routes, show_breakdown=True))
 
         except (ValueError, FileNotFoundError) as error:
             print(f"Result: {error}")
 
         print()
 
-    print("=" * 70)
+    print("=" * 90)
     print("All testcases completed.")
 
 
