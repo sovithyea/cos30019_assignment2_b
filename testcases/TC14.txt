@@ -1,9 +1,16 @@
 # TC14
-# Scenario: Invalid origin node
-# Purpose: Verify system handles unavailable start nodes
+# Scenario: Route during off-peak late night period
+# Purpose: Verify travel time is faster at low traffic compared to peak hours
 
 Origin:
-9999
+970
 
-Destinations:
-3127
+Destination:
+3002
+
+Departure:
+03:30
+
+# Expected: System returns at least 1 and at most 5 routes
+#           Speed should be at or near 60 km/h due to low flow at 03:30
+#           Travel time should be shorter than same route during peak hours

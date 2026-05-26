@@ -1,9 +1,15 @@
 # TC08
-# Scenario: Short route on BARKERS_RD corridor
-# Purpose: Verify routing for neighbouring nodes
+# Scenario: Short route on BARKERS_RD corridor at off-peak time
+# Purpose: Verify routing at low traffic period gives faster travel time
 
 Origin:
 3001
 
-Destinations:
+Destination:
 3002
+
+Departure:
+03:30
+
+# Expected: System returns valid route from 3001 to 3002
+#           Speed should be at or near 60 km/h due to low flow at 03:30

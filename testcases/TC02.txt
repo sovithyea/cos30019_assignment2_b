@@ -5,5 +5,11 @@
 Origin:
 4063
 
-Destinations:
+Destination:
 3127
+
+Departure:
+08:00
+
+# Expected: System returns a valid route from 4063 to 3127
+#           Travel time may differ from TC01 due to directional flow

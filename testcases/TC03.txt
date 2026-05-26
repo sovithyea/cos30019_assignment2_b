@@ -1,9 +1,15 @@
 # TC03
 # Scenario: Adjacent route on BALWYN_RD corridor
-# Purpose: Verify routing between neighbouring SCATS sites using traffic-based travel cost.
+# Purpose: Verify routing between neighbouring SCATS sites 
 
 Origin:
 4063
 
-Destinations:
+Destination:
 4057
+
+Departure:
+17:30
+
+# Expected: System returns a valid route from 4063 to 4057
+#           Single hop, travel time reflects afternoon peak flow

@@ -1,9 +1,16 @@
 # TC15
-# Scenario: Invalid destination node
-# Purpose: Verify system handles unavailable destination nodes
+# Scenario: Assignment specification example O/D pair at afternoon peak
+# Purpose: Verify the exact example stated in the assignment works end-to-end
 
 Origin:
-3127
+2000
+ 
+Destination:
+3002
+ 
+Departure:
+17:30
 
-Destinations:
-9999
+# Expected: System returns at least 1 and at most 5 routes
+#           Routes ranked by travel time ascending
+#           Travel times reflect afternoon peak, busiest period in dataset

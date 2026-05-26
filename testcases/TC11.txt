@@ -1,9 +1,15 @@
 # TC11
-# Scenario: Extended route along BURKE_RD corridor
-# Purpose: Verify routing performance on longer paths using travel cost generated from predicted flow.
+# Scenario: Extended route along BURKE_RD corridor during early morning
+# Purpose: Verify routing performance on longer paths at low traffic
 
 Origin:
 3001
 
-Destinations:
+Destination:
 4032
+
+Departure:
+06:00
+
+# Expected: System returns up to 5 routes from 3001 to 4032
+#           Speed near limit due to low early morning flow at 06:00

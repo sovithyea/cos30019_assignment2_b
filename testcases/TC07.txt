@@ -5,5 +5,11 @@
 Origin:
 3180
 
-Destinations:
+Destination:
 3127
+
+Departure:
+12:00
+
+# Expected: System returns up to 5 routes from 3180 to 3127
+#           Travel times may differ from TC06 due to directional flow

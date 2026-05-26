@@ -1,9 +1,15 @@
 # TC06
-# Scenario: Long multi-hop route across BALWYN_RD corridor
-# Purpose: Verify the system handles long routes and estimates travel time across multiple segments.
+# Scenario: Long route across BALWYN_RD network
+# Purpose: Verify routing handles longer travel paths
 
 Origin:
 3127
 
-Destinations:
+Destination:
 3180
+
+Departure:
+12:00
+
+# Expected: System returns up to 5 routes from 3127 to 3180
+#           Travel times reflect midday traffic conditions

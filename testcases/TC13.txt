@@ -1,9 +1,15 @@
 # TC13
-# Scenario: Extended route in BARKERS_RD corridor
-# Purpose: Verify routing across a long connected path using traffic-based travel cost.
+# Scenario: Longest route in BARKERS_RD chain
+# Purpose: Verify routing across full connected path
 
 Origin:
 3001
 
-Destinations:
+Destination:
 2825
+
+Departure:
+09:00
+
+# Expected: System returns up to 5 routes from 3001 to 2825
+#           Longer total travel time due to multiple hops

@@ -7,3 +7,9 @@ Origin:
 
 Destinations:
 3180
+
+Departure:
+17:30
+
+# Expected: System returns a valid route from 4057 to 3180
+#           Travel time reflects afternoon peak conditions

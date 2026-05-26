@@ -1,9 +1,15 @@
 # TC10
-# Scenario: Route across central network section
-# Purpose: Verify routing through intermediate SCATS sites and calculate travel time.
+# Scenario: Route across central network section during evening wind-down
+# Purpose: Verify routing through several intermediate nodes
 
 Origin:
 3001
 
-Destinations:
+Destination:
 4034
+
+Departure:
+21:00
+
+# Expected: System returns up to 5 routes from 3001 to 4034
+#           Travel times reflect evening wind-down traffic
