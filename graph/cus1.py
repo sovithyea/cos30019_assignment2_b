@@ -11,7 +11,7 @@ MAX_ROUTES = 5
 
 @dataclass(frozen=True)
 class RouteResult:
-    #Store one returned route and its estimated travel time
+    # Store one returned route and its estimated travel time
 
     rank: int
     path: list[str]
@@ -40,7 +40,7 @@ def _normalise_site_id(value: object) -> str:
 
 
 def load_valid_nodes(root: Path | None = None) -> set[str]:
-    #Read all valid SCATS nodes from final_nodes.csv
+    # Read all valid SCATS nodes from final_nodes.csv
     base = root if root is not None else _project_root()
     nodes_file = base / "data" / "route_map" / "final_nodes.csv"
 
@@ -61,7 +61,7 @@ def load_travel_time_graph(
     model_name: str = DEFAULT_MODEL,
     root: Path | None = None,
 ) -> dict[str, list[tuple[str, float]]]:
-    #Build a weighted SCATS graph using predicted travel time in minutes
+    # Build a weighted SCATS graph using predicted travel time in minutes
     base = root if root is not None else _project_root()
     cost_file = base / "data" / "route_map" / "travel_cost.csv"
 
@@ -80,7 +80,7 @@ def load_travel_time_graph(
             f"travel_cost.csv is missing required columns: {sorted(missing)}"
         )
 
-    #Only the selected model contributes costs to final route planning
+    # Only the selected model contributes costs to final route planning
     selected = costs_df[
         costs_df["Model"].astype(str).str.upper() == model_name.upper()
     ].copy()
@@ -117,7 +117,7 @@ def run(
     blocked_nodes: set[str] | None = None,
     blocked_edges: set[tuple[str, str]] | None = None,
 ) -> dict:
-    #Find one lowest-travel-time route using Custom Search 1
+    # Find one lowest-travel-time route using Custom Search 1
     edges = problem["edges"]
     origin = problem["origin"]
     destinations = problem["destinations"]
@@ -136,7 +136,7 @@ def run(
 
     counter = 0
 
-    #Priority queue expands the current route with the lowest time first
+    # Priority queue expands the current route with the lowest time first
     heap: list[tuple[float, str, int, list[str]]] = [
         (0.0, origin, counter, [origin])
     ]
@@ -171,11 +171,11 @@ def run(
             if (current, neighbour) in excluded_edges:
                 continue
 
-            #Avoid cycles in one route
+            # Avoid cycles in one route
             if neighbour in path:
                 continue
 
-            #Add the predicted travel time of the next road segment
+            # Add the predicted travel time of the next road segment
             new_cost = cost_so_far + edge_cost
 
             if new_cost < best_cost.get(neighbour, float("inf")):
@@ -200,7 +200,7 @@ def _path_cost(
     path: list[str],
     costs: dict[tuple[str, str], float],
 ) -> float:
-    #Calculate the total predicted travel time of a complete route
+    # Calculate the total predicted travel time of a complete route
     return sum(
         costs[(path[index], path[index + 1])]
         for index in range(len(path) - 1)
@@ -213,7 +213,7 @@ def _find_alternative_routes(
     destination: str,
     k: int,
 ) -> list[dict]:
-    #Generate up to k loopless routes
+    # Generate up to k loopless routes
     base_problem = {
         "edges": edges,
         "origin": origin,
@@ -317,7 +317,7 @@ def find_routes(
     model_name: str = DEFAULT_MODEL,
     root: Path | None = None,
 ) -> list[RouteResult]:
-    #Return up to five SCATS routes ranked by predicted travel time
+    # Return up to five SCATS routes ranked by predicted travel time
     origin = _normalise_site_id(origin)
     destination = _normalise_site_id(destination)
 
@@ -344,10 +344,10 @@ def find_routes(
     except (TypeError, ValueError) as error:
         raise ValueError("Number of routes must be an integer.") from error
 
-    #Keep returned routes within the assignment limit
+    # Keep returned routes within the assignment limit
     requested_routes = max(1, min(requested_routes, MAX_ROUTES))
 
-    #Predicted travel time is the weighted graph cost
+    # Predicted travel time is the weighted graph cost
     edges = load_travel_time_graph(
         model_name=model_name,
         root=root,
@@ -386,6 +386,6 @@ def format_routes(routes: list[RouteResult]) -> str:
 
 
 if __name__ == "__main__":
-    #Quick manual integration check.
+    # Quick manual integration check.
     sample_routes = find_routes("3127", "4063", k=5)
     print(format_routes(sample_routes))
