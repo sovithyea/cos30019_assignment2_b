@@ -8,6 +8,7 @@ from tkinter import ttk
 import pandas as pd
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
+from matplotlib.ticker import ScalarFormatter
 
 from graph.cus1 import find_routes
 
@@ -58,11 +59,14 @@ def normalise_site_id(value: object) -> str:
     if text.endswith(".0"):
         text = text[:-2]
 
+    if not text:
+        raise ValueError("SCATS site ID cannot be empty.")
+
     return text.zfill(4)
 
 
 def load_map_data() -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Load SCATS nodes and road connections for map visualisation."""
+    """Load valid SCATS nodes and road connections for GUI visualisation."""
     if not NODES_FILE.exists():
         raise FileNotFoundError(
             f"Cannot find {NODES_FILE}. Run graph/build_route_map.py first."
@@ -102,7 +106,22 @@ def load_map_data() -> tuple[pd.DataFrame, pd.DataFrame]:
     if nodes[["longitude", "latitude"]].isna().any().any():
         raise ValueError("final_nodes.csv contains invalid coordinates.")
 
-    return nodes, edges
+    # Only visualise nodes located within the Melbourne SCATS map area.
+    # This prevents incorrect coordinate outliers from stretching the plot.
+    nodes = nodes[
+        nodes["longitude"].between(144.0, 146.0)
+        & nodes["latitude"].between(-39.0, -37.0)
+    ].copy()
+
+    valid_sites = set(nodes["site_id"])
+
+    # Only draw connections whose two endpoint coordinates are valid.
+    edges = edges[
+        edges["from_site"].isin(valid_sites)
+        & edges["to_site"].isin(valid_sites)
+    ].copy()
+
+    return nodes.reset_index(drop=True), edges.reset_index(drop=True)
 
 
 CONFIG = load_config()
@@ -114,7 +133,7 @@ MAXIMUM_NUMBER_OF_ROUTES = int(CONFIG["maximum_number_of_routes"])
 
 nodes_df, edges_df = load_map_data()
 
-# Lookup coordinates quickly when drawing edges and routes.
+# Coordinate lookup used when drawing network connections and selected routes.
 node_coordinates = {
     row.site_id: (row.longitude, row.latitude)
     for row in nodes_df.itertuples(index=False)
@@ -129,40 +148,64 @@ current_routes = []
 
 def draw_network(selected_route=None) -> None:
     """
-    Draw the complete SCATS network.
+    Draw the complete SCATS network and highlight a selected route.
 
-    All normal connections are grey.
-    The currently selected route is highlighted in red.
+    Background network connections are drawn once as grey lines because
+    the route map stores both travelling directions for each connection.
+    The selected route is drawn as red directional arrows.
     """
     map_axis.clear()
 
-    selected_edges: set[tuple[str, str]] = set()
+    selected_path: list[str] = []
     origin = None
     destination = None
 
     if selected_route is not None:
-        path = selected_route.path
+        selected_path = selected_route.path
+        origin = selected_path[0]
+        destination = selected_path[-1]
 
-        selected_edges = {
-            (path[index], path[index + 1])
-            for index in range(len(path) - 1)
-        }
+    # final_edges.csv contains both A -> B and B -> A.
+    # Draw each physical connection only once in the background network.
+    background_edges = edges_df.copy()
+    background_edges["pair_key"] = background_edges.apply(
+        lambda row: tuple(sorted([row["from_site"], row["to_site"]])),
+        axis=1,
+    )
+    background_edges = background_edges.drop_duplicates("pair_key")
 
-        origin = path[0]
-        destination = path[-1]
+    for edge in background_edges.itertuples(index=False):
+        if (
+            edge.from_site not in node_coordinates
+            or edge.to_site not in node_coordinates
+        ):
+            continue
 
-    # Draw all road connections first.
-    for edge in edges_df.itertuples(index=False):
-        from_site = edge.from_site
-        to_site = edge.to_site
+        x_start, y_start = node_coordinates[edge.from_site]
+        x_end, y_end = node_coordinates[edge.to_site]
 
-        if from_site not in node_coordinates or to_site not in node_coordinates:
+        map_axis.plot(
+            [x_start, x_end],
+            [y_start, y_end],
+            color="grey",
+            linewidth=1.2,
+            alpha=0.55,
+            zorder=1,
+        )
+
+    # Highlight the direction travelled on the selected route.
+    for index in range(len(selected_path) - 1):
+        from_site = selected_path[index]
+        to_site = selected_path[index + 1]
+
+        if (
+            from_site not in node_coordinates
+            or to_site not in node_coordinates
+        ):
             continue
 
         x_start, y_start = node_coordinates[from_site]
         x_end, y_end = node_coordinates[to_site]
-
-        is_selected = (from_site, to_site) in selected_edges
 
         map_axis.annotate(
             "",
@@ -170,28 +213,26 @@ def draw_network(selected_route=None) -> None:
             xytext=(x_start, y_start),
             arrowprops={
                 "arrowstyle": "->",
-                "color": "red" if is_selected else "grey",
-                "linewidth": 2.7 if is_selected else 1.0,
-                "alpha": 0.95 if is_selected else 0.48,
-                "shrinkA": 7,
-                "shrinkB": 7,
+                "color": "red",
+                "linewidth": 2.8,
+                "alpha": 0.95,
+                "shrinkA": 8,
+                "shrinkB": 8,
             },
-            zorder=2 if is_selected else 1,
+            zorder=3,
         )
 
-    # Draw nodes and labels.
+    # Draw nodes and labels above the network lines.
     for node in nodes_df.itertuples(index=False):
-        site_id = node.site_id
-
-        if site_id == origin:
+        if node.site_id == origin:
             node_colour = "green"
-            node_size = 68
-        elif site_id == destination:
+            node_size = 76
+        elif node.site_id == destination:
             node_colour = "orange"
-            node_size = 68
+            node_size = 76
         else:
             node_colour = "#78b7df"
-            node_size = 42
+            node_size = 48
 
         map_axis.scatter(
             node.longitude,
@@ -200,17 +241,17 @@ def draw_network(selected_route=None) -> None:
             color=node_colour,
             edgecolors="white",
             linewidths=0.7,
-            zorder=3,
+            zorder=4,
         )
 
         map_axis.text(
             node.longitude,
             node.latitude,
-            site_id,
+            node.site_id,
             fontsize=7,
             ha="left",
             va="bottom",
-            zorder=4,
+            zorder=5,
         )
 
     if selected_route is None:
@@ -226,12 +267,17 @@ def draw_network(selected_route=None) -> None:
     map_axis.set_ylabel("Latitude")
     map_axis.grid(alpha=0.2)
 
+    # Show full geographic coordinates without scientific offset formatting.
+    map_axis.xaxis.set_major_formatter(ScalarFormatter(useOffset=False))
+    map_axis.yaxis.set_major_formatter(ScalarFormatter(useOffset=False))
+    map_axis.ticklabel_format(style="plain", axis="both")
+
     map_figure.tight_layout()
     map_canvas.draw()
 
 
 def update_route_selector(routes) -> None:
-    """Update the route dropdown and visualise the fastest returned route."""
+    """Update the route dropdown and display the fastest returned route."""
     route_selector["values"] = [
         f"Route {route.rank} - {route.total_travel_time:.2f} min"
         for route in routes
@@ -246,7 +292,7 @@ def update_route_selector(routes) -> None:
 
 
 def visualise_selected_route(event=None) -> None:
-    """Highlight the route currently selected by the user."""
+    """Highlight the route currently selected in the dropdown."""
     selected_index = route_selector.current()
 
     if 0 <= selected_index < len(current_routes):
@@ -258,7 +304,7 @@ def visualise_selected_route(event=None) -> None:
 # -------------------------------------------------------------------------
 
 def format_gui_results(routes) -> str:
-    """Format returned routes for the result text box."""
+    """Format route summaries for the GUI result text box."""
     output_lines = []
 
     for route in routes:
@@ -271,14 +317,7 @@ def format_gui_results(routes) -> str:
 
 
 def find_best_routes() -> None:
-    """Find time-dependent routes from the user's input."""
-    print(
-    "DEBUG INPUT:",
-    repr(origin_entry.get()),
-    repr(destination_entry.get()),
-    repr(departure_entry.get()),
-    )
-    
+    """Find traffic-dependent routes from the user's input."""
     global current_routes
 
     origin = origin_entry.get().strip()
@@ -328,7 +367,7 @@ def find_best_routes() -> None:
 
 
 def reset_defaults() -> None:
-    """Reset configurable inputs to values from config.json."""
+    """Reset configurable inputs to values loaded from config.json."""
     global current_routes
 
     current_routes = []
@@ -385,7 +424,7 @@ main_frame.rowconfigure(0, weight=1)
 
 
 # -------------------------------------------------------------------------
-# Left panel: input, parameter settings and text results
+# Left panel: inputs, parameter settings and route results
 # -------------------------------------------------------------------------
 
 left_panel = ttk.Frame(main_frame)
@@ -531,7 +570,7 @@ map_canvas = FigureCanvasTkAgg(
 map_canvas.get_tk_widget().pack(fill="both", expand=True)
 
 
-# Draw the full SCATS network when the GUI first opens.
+# Draw the SCATS network when the GUI first opens.
 draw_network()
 
 
