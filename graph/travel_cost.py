@@ -6,7 +6,7 @@ from pathlib import Path
 import pandas as pd
 
 
-DEFAULT_MODEL = "LSTM"
+DEFAULT_MODEL = "GRU"
 INTERVAL_MINUTES = 15
 DAY_SECONDS = 24 * 60 * 60
 
