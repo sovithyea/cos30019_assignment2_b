@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import heapq
 from dataclasses import dataclass
-from datetime import datetime, timedelta
 from pathlib import Path
 
 from graph.travel_cost import (
@@ -17,11 +16,9 @@ MAX_ROUTES = 5
 
 @dataclass(frozen=True)
 class RouteResult:
-    # Store one final route and its segment-by-segment calculation
     rank: int
     path: list[str]
     total_travel_time: float
-    nodes_created: int
     segments: list[dict]
 
     @property
@@ -30,7 +27,6 @@ class RouteResult:
 
 
 def _normalise_site_id(value: object) -> str:
-    """Normalise SCATS IDs such as 970, 970.0 and '0970'."""
     text = str(value).strip()
 
     if text.endswith(".0"):
@@ -43,57 +39,39 @@ def _normalise_site_id(value: object) -> str:
 
 
 def run(
-    problem: dict,
+    estimator: TravelTimeEstimator,
+    origin: str,
+    destination: str,
+    departure_seconds: float,
     blocked_nodes: set[str] | None = None,
     blocked_edges: set[tuple[str, str]] | None = None,
-) -> dict:
-    """
-    Find one fastest route using cus1
-
-    Edge cost is calculated using predicted traffic flow at the time 
-        the vehicle reaches the start of each segment
-    """
-    estimator: TravelTimeEstimator = problem["estimator"]
-    origin = problem["origin"]
-    destinations = set(problem["destinations"])
-    departure_time: datetime = problem["departure_time"]
-
+) -> dict | None:
+    # Find one fastest route using dynamic segment travel time
     excluded_nodes = blocked_nodes or set()
     excluded_edges = blocked_edges or set()
 
     if origin in excluded_nodes:
-        return {
-            "goal": None,
-            "nodes_created": 0,
-            "path": [],
-            "total_cost": float("inf"),
-        }
+        return None
 
     counter = 0
-
-    # Lowest accumulated travel time is expanded first.
-    heap: list[tuple[float, str, int, list[str]]] = [
-        (0.0, origin, counter, [origin])
+    heap: list[tuple[float, int, str, list[str]]] = [
+        (0.0, counter, origin, [origin])
     ]
-
     best_cost: dict[str, float] = {origin: 0.0}
-    nodes_created = 1
 
     while heap:
-        cost_so_far, current, _, path = heapq.heappop(heap)
+        total_time, _, current, path = heapq.heappop(heap)
 
-        if cost_so_far > best_cost.get(current, float("inf")):
+        if total_time > best_cost.get(current, float("inf")):
             continue
 
-        if current in destinations:
+        if current == destination:
             return {
-                "goal": current,
-                "nodes_created": nodes_created,
                 "path": path,
-                "total_cost": cost_so_far,
+                "total_travel_time": total_time,
             }
 
-        current_time = departure_time + timedelta(minutes=cost_so_far)
+        entry_time_seconds = departure_seconds + total_time * 60
 
         for neighbour in sorted(estimator.neighbours(current)):
             if neighbour in excluded_nodes:
@@ -105,57 +83,50 @@ def run(
             if neighbour in path:
                 continue
 
-            edge_cost = estimator.edge_travel_time(
+            segment_time = estimator.edge_travel_time(
                 from_site=current,
                 to_site=neighbour,
-                entry_time=current_time,
+                entry_time_seconds=entry_time_seconds,
             )
 
-            new_cost = cost_so_far + edge_cost
+            new_total_time = total_time + segment_time
 
-            if new_cost < best_cost.get(neighbour, float("inf")):
-                best_cost[neighbour] = new_cost
+            if new_total_time < best_cost.get(neighbour, float("inf")):
+                best_cost[neighbour] = new_total_time
                 counter += 1
-                nodes_created += 1
 
                 heapq.heappush(
                     heap,
                     (
-                        new_cost,
-                        neighbour,
+                        new_total_time,
                         counter,
+                        neighbour,
                         path + [neighbour],
                     ),
                 )
 
-    return {
-        "goal": None,
-        "nodes_created": nodes_created,
-        "path": [],
-        "total_cost": float("inf"),
-    }
+    return None
 
 
 def _calculate_route_segments(
     path: list[str],
     estimator: TravelTimeEstimator,
-    departure_time: datetime,
+    departure_seconds: float,
 ) -> tuple[float, list[dict]]:
-    # Calculate detailed segment output and total time for one final route
     total_time = 0.0
     segments: list[dict] = []
 
     for index in range(len(path) - 1):
-        entry_time = departure_time + timedelta(minutes=total_time)
+        entry_time_seconds = departure_seconds + total_time * 60
 
-        detail = estimator.get_segment_detail(
+        segment = estimator.get_segment_detail(
             from_site=path[index],
             to_site=path[index + 1],
-            entry_time=entry_time,
+            entry_time_seconds=entry_time_seconds,
         )
 
-        segments.append(detail)
-        total_time += detail["segment_time_minutes"]
+        segments.append(segment)
+        total_time += segment["segment_time_minutes"]
 
     return total_time, segments
 
@@ -164,41 +135,36 @@ def _find_alternative_routes(
     estimator: TravelTimeEstimator,
     origin: str,
     destination: str,
-    departure_time: datetime,
+    departure_seconds: float,
     k: int,
-) -> list[dict]:
-    #Generate up to k loopless alternative routes
-    first_problem = {
-        "estimator": estimator,
-        "origin": origin,
-        "destinations": [destination],
-        "departure_time": departure_time,
-    }
+) -> list[list[str]]:
+    first_route = run(
+        estimator=estimator,
+        origin=origin,
+        destination=destination,
+        departure_seconds=departure_seconds,
+    )
 
-    first_route = run(first_problem)
-
-    if first_route["goal"] is None:
+    if first_route is None:
         return []
 
-    accepted = [first_route]
-    candidates: list[tuple[float, int, dict]] = []
+    accepted_paths: list[list[str]] = [first_route["path"]]
+    candidates: list[tuple[float, int, list[str]]] = []
     candidate_paths: set[tuple[str, ...]] = set()
     counter = 0
 
-    while len(accepted) < k:
-        previous_path = accepted[-1]["path"]
+    while len(accepted_paths) < k:
+        previous_path = accepted_paths[-1]
 
         for spur_index in range(len(previous_path) - 1):
-            spur_node = previous_path[spur_index]
             root_path = previous_path[: spur_index + 1]
+            spur_node = root_path[-1]
 
             blocked_edges: set[tuple[str, str]] = set()
 
-            for accepted_route in accepted:
-                accepted_path = accepted_route["path"]
-
+            for accepted_path in accepted_paths:
                 if (
-                    len(accepted_path) > spur_index
+                    len(accepted_path) > spur_index + 1
                     and accepted_path[: spur_index + 1] == root_path
                 ):
                     blocked_edges.add(
@@ -211,60 +177,50 @@ def _find_alternative_routes(
             root_time, _ = _calculate_route_segments(
                 path=root_path,
                 estimator=estimator,
-                departure_time=departure_time,
+                departure_seconds=departure_seconds,
             )
 
-            spur_departure = departure_time + timedelta(minutes=root_time)
-
-            spur_problem = {
-                "estimator": estimator,
-                "origin": spur_node,
-                "destinations": [destination],
-                "departure_time": spur_departure,
-            }
-
             spur_route = run(
-                problem=spur_problem,
+                estimator=estimator,
+                origin=spur_node,
+                destination=destination,
+                departure_seconds=departure_seconds + root_time * 60,
                 blocked_nodes=set(root_path[:-1]),
                 blocked_edges=blocked_edges,
             )
 
-            if spur_route["goal"] is None:
+            if spur_route is None:
                 continue
 
-            total_path = root_path[:-1] + spur_route["path"]
-            path_key = tuple(total_path)
+            candidate_path = root_path[:-1] + spur_route["path"]
+            candidate_key = tuple(candidate_path)
 
-            if path_key in candidate_paths:
+            if candidate_key in candidate_paths:
                 continue
 
-            if any(route["path"] == total_path for route in accepted):
+            if candidate_path in accepted_paths:
                 continue
 
-            total_time, _ = _calculate_route_segments(
-                path=total_path,
+            candidate_time, _ = _calculate_route_segments(
+                path=candidate_path,
                 estimator=estimator,
-                departure_time=departure_time,
+                departure_seconds=departure_seconds,
             )
 
-            candidate = {
-                "goal": destination,
-                "nodes_created": spur_route["nodes_created"],
-                "path": total_path,
-                "total_cost": total_time,
-            }
-
             counter += 1
-            heapq.heappush(candidates, (total_time, counter, candidate))
-            candidate_paths.add(path_key)
+            heapq.heappush(
+                candidates,
+                (candidate_time, counter, candidate_path),
+            )
+            candidate_paths.add(candidate_key)
 
         if not candidates:
             break
 
-        _, _, selected_route = heapq.heappop(candidates)
-        accepted.append(selected_route)
+        _, _, selected_path = heapq.heappop(candidates)
+        accepted_paths.append(selected_path)
 
-    return accepted
+    return accepted_paths
 
 
 def find_routes(
@@ -275,10 +231,17 @@ def find_routes(
     model_name: str = DEFAULT_MODEL,
     root: Path | None = None,
 ) -> list[RouteResult]:
-    """Return up to five dynamic routes ranked by predicted travel time."""
+    # Return up to five routes ranked by predicted travel time
     origin = _normalise_site_id(origin)
     destination = _normalise_site_id(destination)
-    departure = parse_departure_time(departure_time)
+    departure_seconds = parse_departure_time(departure_time)
+
+    try:
+        requested_routes = int(k)
+    except (TypeError, ValueError) as error:
+        raise ValueError("Number of routes must be an integer.") from error
+
+    requested_routes = max(1, min(requested_routes, MAX_ROUTES))
 
     estimator = TravelTimeEstimator(
         model_name=model_name,
@@ -299,27 +262,19 @@ def find_routes(
                 rank=1,
                 path=[origin],
                 total_travel_time=0.0,
-                nodes_created=1,
                 segments=[],
             )
         ]
 
-    try:
-        requested_routes = int(k)
-    except (TypeError, ValueError) as error:
-        raise ValueError("Number of routes must be an integer.") from error
-
-    requested_routes = max(1, min(requested_routes, MAX_ROUTES))
-
-    routes = _find_alternative_routes(
+    paths = _find_alternative_routes(
         estimator=estimator,
         origin=origin,
         destination=destination,
-        departure_time=departure,
+        departure_seconds=departure_seconds,
         k=requested_routes,
     )
 
-    if not routes:
+    if not paths:
         raise ValueError(
             f"No available route from {origin} to {destination} "
             f"for departure time {departure_time}."
@@ -327,71 +282,68 @@ def find_routes(
 
     results: list[RouteResult] = []
 
-    for index, route in enumerate(routes, start=1):
+    for rank, path in enumerate(paths, start=1):
         total_time, segments = _calculate_route_segments(
-            path=route["path"],
+            path=path,
             estimator=estimator,
-            departure_time=departure,
+            departure_seconds=departure_seconds,
         )
 
         results.append(
             RouteResult(
-                rank=index,
-                path=route["path"],
+                rank=rank,
+                path=path,
                 total_travel_time=total_time,
-                nodes_created=route["nodes_created"],
                 segments=segments,
             )
         )
 
     return results
 
+def format_duration(minutes: float) -> str:
+    """Format decimal minutes as MM:SS."""
+    total_seconds = int(round(minutes * 60))
+    minute_part = total_seconds // 60
+    second_part = total_seconds % 60
+
+    return f"{minute_part:02d}:{second_part:02d}"
+
 
 def format_routes(
     routes: list[RouteResult],
     show_breakdown: bool = False,
 ) -> str:
-    # Format routes for terminal output or GUI display
-    route_outputs: list[str] = []
+    """Format route output for the GUI or testcase logs."""
+    formatted_routes: list[str] = []
 
     for route in routes:
-        output = [
-            f"Route {route.rank}: {route.route_text}",
-        ]
+        lines = [f"Route {route.rank}: {route.route_text}"]
 
-        if show_breakdown:
-            output.append("\nSegment Breakdown:")
+        if show_breakdown and route.segments:
+            lines.extend(["", "Segment Breakdown:"])
 
             for index, segment in enumerate(route.segments, start=1):
-                output.extend(
+                lines.extend(
                     [
                         f"{index}. {segment['from_site']} → {segment['to_site']}",
-                        f"   Entry Time:       {segment['entry_time'].strftime('%H:%M:%S')}",
-                        f"   Traffic Interval: {segment['traffic_interval']}",
-                        f"   Predicted Flow:   {segment['predicted_flow_15_min']:.2f} vehicles / 15 min",
-                        f"   Hourly Flow:      {segment['predicted_flow_per_hour']:.2f} vehicles / hour",
-                        f"   Distance:         {segment['distance_km']:.4f} km",
-                        f"   Segment Time:     {segment['segment_time_minutes']:.2f} minutes",
-                        f"   Arrival Time:     {segment['arrival_time'].strftime('%H:%M:%S')}",
+                        f"   Entry Time:          {segment['entry_time']}",
+                        f"   Traffic Interval:    {segment['traffic_interval']}",
+                        f"   Predicted Flow:      {segment['predicted_flow_15_min']:.2f} vehicles / 15 min",
+                        f"   Hourly Flow:         {segment['predicted_flow_per_hour']:.2f} vehicles / hour",
+                        f"   Estimated Speed:     {segment['speed_kmh']:.2f} km/h",
+                        f"   Distance:            {segment['distance_km']:.4f} km",
+                        f"   Segment Time:        {segment['segment_time_minutes']:.2f} minutes "
+                        f"({format_duration(segment['segment_time_minutes'])})",
+                        f"   Arrival Time:        {segment['arrival_time']}",
                         "",
                     ]
                 )
 
-        output.append(
-            f"Total Estimated Travel Time: {route.total_travel_time:.2f} minutes"
+        lines.append(
+            f"Total Estimated Travel Time: {route.total_travel_time:.2f} minutes "
+            f"({format_duration(route.total_travel_time)})"
         )
 
-        route_outputs.append("\n".join(output))
+        formatted_routes.append("\n".join(lines))
 
-    return "\n\n".join(route_outputs)
-
-
-if __name__ == "__main__":
-    sample_routes = find_routes(
-        origin="3127",
-        destination="4063",
-        departure_time="08:00",
-        k=5,
-    )
-
-    print(format_routes(sample_routes, show_breakdown=True))
+    return "\n\n".join(formatted_routes)

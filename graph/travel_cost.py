@@ -12,7 +12,6 @@ DAY_SECONDS = 24 * 60 * 60
 
 SPEED_LIMIT_KMH = 60.0
 CAPACITY_FLOW_PER_HOUR = 1500.0
-INTERSECTION_DELAY_MINUTES = 0.5
 
 # Supplied flow-speed conversion formula:
 # flow = A * speed^2 + B * speed
@@ -263,10 +262,8 @@ class TravelTimeEstimator:
         speed_kmh = flow_to_speed(flow_per_hour)
         distance_km = float(edge.iloc[0]["distance_km"])
 
-        segment_time_minutes = (
-            (distance_km / speed_kmh) * 60
-            + INTERSECTION_DELAY_MINUTES
-        )
+        segment_time_minutes = (distance_km / speed_kmh) * 60
+        
 
         arrival_time_seconds = entry_time_seconds + segment_time_minutes * 60
 
@@ -276,6 +273,9 @@ class TravelTimeEstimator:
             "entry_time": format_time_of_day(entry_time_seconds),
             "traffic_interval": _interval_label(interval),
             "predicted_flow_15_min": predicted_flow_15_min,
+            "predicted_flow_per_hour": flow_per_hour,
+            "speed_kmh": speed_kmh,
+            "distance_km": distance_km,
             "segment_time_minutes": segment_time_minutes,
             "arrival_time": format_time_of_day(arrival_time_seconds),
         }

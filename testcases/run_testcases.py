@@ -2,7 +2,6 @@ from pathlib import Path
 import re
 import sys
 
-# Allow imports from the project root when this script is run directly.
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -13,7 +12,6 @@ TESTCASE_FOLDER = Path(__file__).resolve().parent
 
 
 def read_testcase(file_path: Path) -> tuple[str, str, str]:
-    """Read Origin, Destination and Departure from one testcase file."""
     content = file_path.read_text(encoding="utf-8")
 
     origin = re.search(
@@ -21,13 +19,11 @@ def read_testcase(file_path: Path) -> tuple[str, str, str]:
         content,
         flags=re.MULTILINE,
     )
-
     destination = re.search(
         r"^Destination:\s*\n\s*(\S+)",
         content,
         flags=re.MULTILINE,
     )
-
     departure = re.search(
         r"^Departure:\s*\n\s*(\S+)",
         content,
@@ -46,8 +42,7 @@ def read_testcase(file_path: Path) -> tuple[str, str, str]:
     )
 
 
-def run_testcase_file(testcase_file: Path) -> None:
-    # Run one testcase and print detailed route calculations
+def run_testcase(testcase_file: Path) -> None:
     print("=" * 90)
     print(testcase_file.stem)
 
@@ -75,10 +70,6 @@ def run_testcase_file(testcase_file: Path) -> None:
 
 
 def main() -> None:
-    """
-    Run one selected testcase or all testcases.
-    Examples:   python3 testcases/run_testcases.py TC01.txt
-    """
     if len(sys.argv) > 1:
         testcase_name = sys.argv[1]
 
@@ -92,16 +83,16 @@ def main() -> None:
                 f"Cannot find testcase file: {testcase_file}"
             )
 
-        run_testcase_file(testcase_file)
+        run_testcase(testcase_file)
         return
 
     testcase_files = sorted(TESTCASE_FOLDER.glob("TC*.txt"))
 
     if not testcase_files:
-        raise FileNotFoundError("No testcase files found in the testcases folder.")
+        raise FileNotFoundError("No testcase files found.")
 
     for testcase_file in testcase_files:
-        run_testcase_file(testcase_file)
+        run_testcase(testcase_file)
 
     print("=" * 90)
     print("All testcases completed.")
