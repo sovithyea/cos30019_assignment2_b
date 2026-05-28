@@ -1,4 +1,8 @@
 {
-  "default_departure_time": "08:00",
-  "default_route_count": 5
+    "default_model": "LSTM",
+    "default_departure_time": "08:00",
+    "default_number_of_routes": 1,
+    "maximum_number_of_routes": 5,
+    "window_title": "Traffic-Based Route Guidance System",
+    "window_size": "1400x820"
 }

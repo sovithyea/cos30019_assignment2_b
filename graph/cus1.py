@@ -17,8 +17,7 @@ MAX_ROUTES = 5
 
 @dataclass(frozen=True)
 class RouteResult:
-    """Store one final route and its segment-by-segment calculation."""
-
+    # Store one final route and its segment-by-segment calculation
     rank: int
     path: list[str]
     total_travel_time: float
@@ -49,10 +48,10 @@ def run(
     blocked_edges: set[tuple[str, str]] | None = None,
 ) -> dict:
     """
-    Find one fastest route using Custom Search 1 from Assignment 2A.
+    Find one fastest route using cus1
 
-    Edge cost is calculated dynamically using predicted traffic flow at the
-    time the vehicle reaches the start of each segment.
+    Edge cost is calculated using predicted traffic flow at the time 
+        the vehicle reaches the start of each segment
     """
     estimator: TravelTimeEstimator = problem["estimator"]
     origin = problem["origin"]
@@ -142,7 +141,7 @@ def _calculate_route_segments(
     estimator: TravelTimeEstimator,
     departure_time: datetime,
 ) -> tuple[float, list[dict]]:
-    """Calculate detailed segment output and total time for one final route."""
+    # Calculate detailed segment output and total time for one final route
     total_time = 0.0
     segments: list[dict] = []
 
@@ -168,7 +167,7 @@ def _find_alternative_routes(
     departure_time: datetime,
     k: int,
 ) -> list[dict]:
-    """Generate up to k loopless alternative routes."""
+    #Generate up to k loopless alternative routes
     first_problem = {
         "estimator": estimator,
         "origin": origin,
@@ -352,7 +351,7 @@ def format_routes(
     routes: list[RouteResult],
     show_breakdown: bool = False,
 ) -> str:
-    """Format routes for terminal output or GUI display."""
+    # Format routes for terminal output or GUI display
     route_outputs: list[str] = []
 
     for route in routes:
@@ -371,7 +370,6 @@ def format_routes(
                         f"   Traffic Interval: {segment['traffic_interval']}",
                         f"   Predicted Flow:   {segment['predicted_flow_15_min']:.2f} vehicles / 15 min",
                         f"   Hourly Flow:      {segment['predicted_flow_per_hour']:.2f} vehicles / hour",
-                        f"   Speed:            {segment['speed_kmh']:.2f} km/h",
                         f"   Distance:         {segment['distance_km']:.4f} km",
                         f"   Segment Time:     {segment['segment_time_minutes']:.2f} minutes",
                         f"   Arrival Time:     {segment['arrival_time'].strftime('%H:%M:%S')}",

@@ -47,7 +47,7 @@ def read_testcase(file_path: Path) -> tuple[str, str, str]:
 
 
 def run_testcase_file(testcase_file: Path) -> None:
-    """Run one testcase and print detailed route calculations."""
+    # Run one testcase and print detailed route calculations
     print("=" * 90)
     print(testcase_file.stem)
 
@@ -77,11 +77,7 @@ def run_testcase_file(testcase_file: Path) -> None:
 def main() -> None:
     """
     Run one selected testcase or all testcases.
-
-    Examples:
-        python3 testcases/run_testcases.py TC01
-        python3 testcases/run_testcases.py TC01.txt
-        python3 testcases/run_testcases.py
+    Examples:   python3 testcases/run_testcases.py TC01.txt
     """
     if len(sys.argv) > 1:
         testcase_name = sys.argv[1]
