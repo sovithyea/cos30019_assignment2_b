@@ -22,6 +22,8 @@ CONFIG_FILE = PROJECT_ROOT / "config.json"
 NODES_FILE = PROJECT_ROOT / "data" / "route_map" / "final_nodes.csv"
 EDGES_FILE = PROJECT_ROOT / "data" / "route_map" / "final_edges.csv"
 
+AVAILABLE_MODELS = ("GRU", "CNN", "LSTM")
+
 
 def load_config() -> dict:
     """Load GUI defaults from config.json."""
@@ -66,7 +68,7 @@ def normalise_site_id(value: object) -> str:
 
 
 def load_map_data() -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Load valid SCATS nodes and road connections for GUI visualisation."""
+    """Load valid SCATS nodes and connections for GUI visualisation."""
     if not NODES_FILE.exists():
         raise FileNotFoundError(
             f"Cannot find {NODES_FILE}. Run graph/build_route_map.py first."
@@ -106,8 +108,7 @@ def load_map_data() -> tuple[pd.DataFrame, pd.DataFrame]:
     if nodes[["longitude", "latitude"]].isna().any().any():
         raise ValueError("final_nodes.csv contains invalid coordinates.")
 
-    # Only visualise nodes located within the Melbourne SCATS map area.
-    # This prevents incorrect coordinate outliers from stretching the plot.
+    # Visualisation only: remove invalid coordinate outliers outside Melbourne.
     nodes = nodes[
         nodes["longitude"].between(144.0, 146.0)
         & nodes["latitude"].between(-39.0, -37.0)
@@ -115,7 +116,7 @@ def load_map_data() -> tuple[pd.DataFrame, pd.DataFrame]:
 
     valid_sites = set(nodes["site_id"])
 
-    # Only draw connections whose two endpoint coordinates are valid.
+    # Only draw connections whose endpoint coordinates are valid.
     edges = edges[
         edges["from_site"].isin(valid_sites)
         & edges["to_site"].isin(valid_sites)
@@ -126,14 +127,18 @@ def load_map_data() -> tuple[pd.DataFrame, pd.DataFrame]:
 
 CONFIG = load_config()
 
-DEFAULT_MODEL = CONFIG["default_model"]
-DEFAULT_DEPARTURE_TIME = CONFIG["default_departure_time"]
+DEFAULT_MODEL = str(CONFIG["default_model"]).upper()
+DEFAULT_DEPARTURE_TIME = str(CONFIG["default_departure_time"])
 DEFAULT_NUMBER_OF_ROUTES = int(CONFIG["default_number_of_routes"])
 MAXIMUM_NUMBER_OF_ROUTES = int(CONFIG["maximum_number_of_routes"])
 
+if DEFAULT_MODEL not in AVAILABLE_MODELS:
+    raise ValueError(
+        f"default_model in config.json must be one of: {', '.join(AVAILABLE_MODELS)}."
+    )
+
 nodes_df, edges_df = load_map_data()
 
-# Coordinate lookup used when drawing network connections and selected routes.
 node_coordinates = {
     row.site_id: (row.longitude, row.latitude)
     for row in nodes_df.itertuples(index=False)
@@ -148,11 +153,10 @@ current_routes = []
 
 def draw_network(selected_route=None) -> None:
     """
-    Draw the complete SCATS network and highlight a selected route.
+    Draw the SCATS network and highlight the selected route.
 
-    Background network connections are drawn once as grey lines because
-    the route map stores both travelling directions for each connection.
-    The selected route is drawn as red directional arrows.
+    Background connections are drawn once as grey lines.
+    The selected route direction is highlighted using red arrows.
     """
     map_axis.clear()
 
@@ -165,8 +169,8 @@ def draw_network(selected_route=None) -> None:
         origin = selected_path[0]
         destination = selected_path[-1]
 
-    # final_edges.csv contains both A -> B and B -> A.
-    # Draw each physical connection only once in the background network.
+    # The route graph stores both A -> B and B -> A.
+    # Show each physical connection only once in the background network.
     background_edges = edges_df.copy()
     background_edges["pair_key"] = background_edges.apply(
         lambda row: tuple(sorted([row["from_site"], row["to_site"]])),
@@ -188,12 +192,12 @@ def draw_network(selected_route=None) -> None:
             [x_start, x_end],
             [y_start, y_end],
             color="grey",
-            linewidth=1.2,
-            alpha=0.55,
+            linewidth=1.1,
+            alpha=0.5,
             zorder=1,
         )
 
-    # Highlight the direction travelled on the selected route.
+    # Highlight the direction travelled by the selected route.
     for index in range(len(selected_path) - 1):
         from_site = selected_path[index]
         to_site = selected_path[index + 1]
@@ -222,7 +226,7 @@ def draw_network(selected_route=None) -> None:
             zorder=3,
         )
 
-    # Draw nodes and labels above the network lines.
+    # Draw nodes and labels.
     for node in nodes_df.itertuples(index=False):
         if node.site_id == origin:
             node_colour = "green"
@@ -267,7 +271,6 @@ def draw_network(selected_route=None) -> None:
     map_axis.set_ylabel("Latitude")
     map_axis.grid(alpha=0.2)
 
-    # Show full geographic coordinates without scientific offset formatting.
     map_axis.xaxis.set_major_formatter(ScalarFormatter(useOffset=False))
     map_axis.yaxis.set_major_formatter(ScalarFormatter(useOffset=False))
     map_axis.ticklabel_format(style="plain", axis="both")
@@ -277,7 +280,7 @@ def draw_network(selected_route=None) -> None:
 
 
 def update_route_selector(routes) -> None:
-    """Update the route dropdown and display the fastest returned route."""
+    """Update route dropdown and show the fastest returned route."""
     route_selector["values"] = [
         f"Route {route.rank} - {route.total_travel_time:.2f} min"
         for route in routes
@@ -292,7 +295,7 @@ def update_route_selector(routes) -> None:
 
 
 def visualise_selected_route(event=None) -> None:
-    """Highlight the route currently selected in the dropdown."""
+    """Highlight the route currently selected by the user."""
     selected_index = route_selector.current()
 
     if 0 <= selected_index < len(current_routes):
@@ -304,7 +307,7 @@ def visualise_selected_route(event=None) -> None:
 # -------------------------------------------------------------------------
 
 def format_gui_results(routes) -> str:
-    """Format route summaries for the GUI result text box."""
+    """Format route summaries for the GUI text box."""
     output_lines = []
 
     for route in routes:
@@ -316,6 +319,16 @@ def format_gui_results(routes) -> str:
     return "\n\n".join(output_lines)
 
 
+def update_model_display(event=None) -> None:
+    """Update the subtitle when the selected prediction model changes."""
+    subtitle_label.configure(
+        text=(
+            "Dynamic route estimation using predicted traffic flow "
+            f"from selected model: {model_selector.get()}"
+        )
+    )
+
+
 def find_best_routes() -> None:
     """Find traffic-dependent routes from the user's input."""
     global current_routes
@@ -323,6 +336,7 @@ def find_best_routes() -> None:
     origin = origin_entry.get().strip()
     destination = destination_entry.get().strip()
     departure_time = departure_entry.get().strip()
+    selected_model = model_selector.get().strip().upper()
 
     if not origin or not destination or not departure_time:
         result_text.delete("1.0", tk.END)
@@ -332,20 +346,28 @@ def find_best_routes() -> None:
         )
         return
 
+    if selected_model not in AVAILABLE_MODELS:
+        result_text.delete("1.0", tk.END)
+        result_text.insert(
+            tk.END,
+            f"Please select a model: {', '.join(AVAILABLE_MODELS)}.",
+        )
+        return
+
     try:
         current_routes = find_routes(
             origin=origin,
             destination=destination,
             departure_time=departure_time,
             k=int(route_count.get()),
-            model_name=DEFAULT_MODEL,
+            model_name=selected_model,
         )
 
         output = (
             f"Origin: {normalise_site_id(origin)}\n"
             f"Destination: {normalise_site_id(destination)}\n"
             f"Departure Time: {departure_time}\n"
-            f"Model Used: {DEFAULT_MODEL}\n\n"
+            f"Model Used: {selected_model}\n\n"
             f"{format_gui_results(current_routes)}"
         )
 
@@ -367,7 +389,7 @@ def find_best_routes() -> None:
 
 
 def reset_defaults() -> None:
-    """Reset configurable inputs to values loaded from config.json."""
+    """Reset inputs and model selection to config.json defaults."""
     global current_routes
 
     current_routes = []
@@ -377,6 +399,9 @@ def reset_defaults() -> None:
 
     departure_entry.delete(0, tk.END)
     departure_entry.insert(0, DEFAULT_DEPARTURE_TIME)
+
+    model_selector.set(DEFAULT_MODEL)
+    update_model_display()
 
     route_count.set(str(DEFAULT_NUMBER_OF_ROUTES))
 
@@ -408,8 +433,8 @@ title_label.pack(pady=(12, 2))
 subtitle_label = ttk.Label(
     root,
     text=(
-        f"Dynamic route estimation using predicted traffic flow "
-        f"from configured model: {DEFAULT_MODEL}"
+        "Dynamic route estimation using predicted traffic flow "
+        f"from selected model: {DEFAULT_MODEL}"
     ),
 )
 subtitle_label.pack(pady=(0, 10))
@@ -470,8 +495,25 @@ departure_entry.grid(row=5, column=0, sticky="w", pady=(0, 8))
 departure_entry.insert(0, DEFAULT_DEPARTURE_TIME)
 
 
-ttk.Label(input_frame, text="Number of Routes:").grid(
+ttk.Label(input_frame, text="Prediction Model:").grid(
     row=6,
+    column=0,
+    sticky="w",
+    pady=5,
+)
+model_selector = ttk.Combobox(
+    input_frame,
+    values=AVAILABLE_MODELS,
+    state="readonly",
+    width=19,
+)
+model_selector.grid(row=7, column=0, sticky="w", pady=(0, 8))
+model_selector.set(DEFAULT_MODEL)
+model_selector.bind("<<ComboboxSelected>>", update_model_display)
+
+
+ttk.Label(input_frame, text="Number of Routes:").grid(
+    row=8,
     column=0,
     sticky="w",
     pady=5,
@@ -485,7 +527,7 @@ route_count = ttk.Combobox(
     state="readonly",
     width=19,
 )
-route_count.grid(row=7, column=0, sticky="w", pady=(0, 12))
+route_count.grid(row=9, column=0, sticky="w", pady=(0, 12))
 route_count.set(str(DEFAULT_NUMBER_OF_ROUTES))
 
 
@@ -493,13 +535,13 @@ ttk.Button(
     input_frame,
     text="Find Routes",
     command=find_best_routes,
-).grid(row=8, column=0, sticky="ew", pady=(0, 6))
+).grid(row=10, column=0, sticky="ew", pady=(0, 6))
 
 ttk.Button(
     input_frame,
     text="Reset Defaults",
     command=reset_defaults,
-).grid(row=9, column=0, sticky="ew")
+).grid(row=11, column=0, sticky="ew")
 
 
 results_frame = ttk.LabelFrame(
@@ -570,7 +612,7 @@ map_canvas = FigureCanvasTkAgg(
 map_canvas.get_tk_widget().pack(fill="both", expand=True)
 
 
-# Draw the SCATS network when the GUI first opens.
+# Draw the network when the GUI first opens.
 draw_network()
 
 

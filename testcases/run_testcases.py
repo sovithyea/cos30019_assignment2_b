@@ -9,11 +9,12 @@ from graph.cus1 import find_routes, format_routes
 
 
 TESTCASE_FOLDER = Path(__file__).resolve().parent
+AVAILABLE_MODELS = ("LSTM", "GRU", "CNN")
 MAX_ROUTES = 5
 
 
 def read_testcase(file_path: Path) -> tuple[str, str, str]:
-    # Read route input values from one testcase file
+    """Read Origin, Destination and Departure from one testcase file."""
     content = file_path.read_text(encoding="utf-8")
 
     origin = re.search(
@@ -44,8 +45,20 @@ def read_testcase(file_path: Path) -> tuple[str, str, str]:
     )
 
 
+def read_model_name(value: str) -> str:
+    """Validate the prediction model selected for the testcase."""
+    model_name = value.strip().upper()
+
+    if model_name not in AVAILABLE_MODELS:
+        raise ValueError(
+            f"Model must be one of: {', '.join(AVAILABLE_MODELS)}."
+        )
+
+    return model_name
+
+
 def read_route_count(value: str) -> int:
-    # Validate the requested number of best routes
+    """Validate the requested number of routes."""
     try:
         route_count = int(value)
     except ValueError as error:
@@ -57,8 +70,12 @@ def read_route_count(value: str) -> int:
     return route_count
 
 
-def run_testcase(testcase_file: Path, route_count: int) -> None:
-    # Run one testcase and print the requested best routes
+def run_testcase(
+    testcase_file: Path,
+    model_name: str,
+    route_count: int,
+) -> None:
+    """Run one testcase using the selected prediction model."""
     print("=" * 90)
     print(testcase_file.stem)
 
@@ -68,6 +85,7 @@ def run_testcase(testcase_file: Path, route_count: int) -> None:
         print(f"Origin:      {origin}")
         print(f"Destination: {destination}")
         print(f"Departure:   {departure}")
+        print(f"Model Used:  {model_name}")
         print(f"Best Routes: {route_count}")
         print()
 
@@ -76,6 +94,7 @@ def run_testcase(testcase_file: Path, route_count: int) -> None:
             destination=destination,
             departure_time=departure,
             k=route_count,
+            model_name=model_name,
         )
 
         print(format_routes(routes, show_breakdown=True))
@@ -89,42 +108,36 @@ def run_testcase(testcase_file: Path, route_count: int) -> None:
 def main() -> None:
     """
     Usage:
-        python3 testcases/run_testcases.py TC01.txt 1
-        python3 testcases/run_testcases.py TC01.txt 5
-        python3 testcases/run_testcases.py
+        python3 testcases/run_testcases.py TC07.txt GRU 1
+        python3 testcases/run_testcases.py TC07 GRU 5
     """
-    if len(sys.argv) > 1:
-        testcase_name = sys.argv[1]
-
-        if not testcase_name.endswith(".txt"):
-            testcase_name += ".txt"
-
-        testcase_file = TESTCASE_FOLDER / testcase_name
-
-        if not testcase_file.exists():
-            raise FileNotFoundError(
-                f"Cannot find testcase file: {testcase_file}"
-            )
-
-        route_count = (
-            read_route_count(sys.argv[2])
-            if len(sys.argv) > 2
-            else MAX_ROUTES
+    if len(sys.argv) != 4:
+        print(
+            "Usage: python3 testcases/run_testcases.py "
+            "<TCxx.txt> <LSTM|GRU|CNN> <1|2|3|4|5>"
         )
-
-        run_testcase(testcase_file, route_count)
         return
 
-    testcase_files = sorted(TESTCASE_FOLDER.glob("TC*.txt"))
+    testcase_name = sys.argv[1]
 
-    if not testcase_files:
-        raise FileNotFoundError("No testcase files found.")
+    if not testcase_name.endswith(".txt"):
+        testcase_name += ".txt"
 
-    for testcase_file in testcase_files:
-        run_testcase(testcase_file, MAX_ROUTES)
+    testcase_file = TESTCASE_FOLDER / testcase_name
 
-    print("=" * 90)
-    print("All testcases completed.")
+    if not testcase_file.exists():
+        raise FileNotFoundError(
+            f"Cannot find testcase file: {testcase_file}"
+        )
+
+    model_name = read_model_name(sys.argv[2])
+    route_count = read_route_count(sys.argv[3])
+
+    run_testcase(
+        testcase_file=testcase_file,
+        model_name=model_name,
+        route_count=route_count,
+    )
 
 
 if __name__ == "__main__":
