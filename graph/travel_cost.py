@@ -283,11 +283,11 @@ class TravelTimeEstimator:
         }
 
     def valid_nodes(self) -> set[str]:
-        """Return SCATS sites available in the route graph."""
+        """Return SCATS sites available in the route graph"""
         return set(self.edges["from_site"]) | set(self.edges["to_site"])
 
     def neighbours(self, site_id: str) -> list[str]:
-        """Return directly connected next SCATS sites."""
+        """Return directly connected next SCATS sites"""
         site_id = _normalise_site_id(site_id)
 
         return self.edges.loc[
@@ -326,7 +326,7 @@ class TravelTimeEstimator:
 
         predicted_flow_15_min = self.flow_lookup[flow_key]
 
-        # The model predicts 15-minute flow; the conversion uses hourly flow.
+        # The model predicts 15-minute flow; the conversion uses hourly flow
         flow_per_hour = predicted_flow_15_min * 4
         speed_kmh = flow_to_speed(flow_per_hour)
         distance_km = float(edge.iloc[0]["distance_km"])
