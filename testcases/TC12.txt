@@ -1,15 +1,13 @@
 # TC12
-# Scenario: Route from BARKERS_RD to northern corridor during afternoon peak
-# Purpose: Verify routing across multiple road segments while considering predicted traffic flow.
+# Scenario: Directed Graph Behaviour — Forward Direction
+# Purpose: Verify route availability and estimated travel time in the forward direction.
+# Expected: The system returns a valid route and estimated travel time from the origin to the destination.
 
 Origin:
-3001
+3127
 
 Destination:
-4030
+3180
 
 Departure:
-17:30
-
-# Expected: System returns up to 5 routes from 3001 to 4030
-#           Travel times reflect busiest period in the dataset at 17:30
+12:00

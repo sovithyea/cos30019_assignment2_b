@@ -1,15 +1,13 @@
 # TC07
-# Scenario: Reverse direction of TC06
-# Purpose: Verify long-path routing in opposite direction
+# Scenario: Traffic-Time Effect - Off-Peak vs Peak Pair 2
+# Purpose: Compare with TC06 and verify that traffic-based travel time changes across multiple segments during a peak period.
+# Expected:  The system returns the same valid multi-segment route, but the estimated travel time is higher than TC06.
 
 Origin:
-3180
-
-Destination:
 3127
 
-Departure:
-12:00
+Destination:
+3180
 
-# Expected: System returns up to 5 routes from 3180 to 3127
-#           Travel times may differ from TC06 due to directional flow
+Departure:
+17:30

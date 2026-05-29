@@ -1,15 +1,13 @@
 # TC11
-# Scenario: Extended route along BURKE_RD corridor during early morning
-# Purpose: Verify routing performance on longer paths at low traffic
+# Scenario: Dynamic Routing — Best Route Change Pair 2
+# Purpose: Compare with TC10 to determine whether changing the departure time affects the best route, route ranking, or travel time.
+# Expected: The system returns valid ranked routes. The travel time should differ from TC10, while the best route and ranking may remain unchanged.
 
 Origin:
-3001
+4063
 
 Destination:
 4032
 
 Departure:
-06:00
-
-# Expected: System returns up to 5 routes from 3001 to 4032
-#           Speed near limit due to low early morning flow at 06:00
+18:00

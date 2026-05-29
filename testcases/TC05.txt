@@ -1,15 +1,13 @@
 # TC05
-# Scenario: Multi-hop route along BALWYN_RD
-# Purpose: Verify routing across multiple connected edges
+# Scenario: Traffic-Time Effect - Off-Peak vs Peak Pair 1
+# Purpose: Compare with TC04 and verify that traffic-based travel time changes during a peak period.
+# Expected: The system returns the same valid route, but the estimated travel time is higher than TC04.
 
 Origin:
-3127
+4063
 
 Destination:
 4057
 
 Departure:
-09:00
-
-# Expected: System returns up to 5 routes from 3127 to 4057
-#           All routes must pass through valid intermediate nodes
+17:30

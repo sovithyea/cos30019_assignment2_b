@@ -1,15 +1,14 @@
 # TC04
-# Scenario: Route to DONCASTER_RD area
-# Purpose: Verify routing between adjacent nodes on the eastern corridor
+# Scenario: Traffic-Time Effect - Off-Peak vs Peak Pair 1
+# Purpose: Record the estimated travel time during an off-peak period using a short direct route.
+# Expected: The system returns a valid route with lower travel time compared to TC05.
 
 Origin:
+4063
+
+Destination:
 4057
 
-Destinations:
-3180
-
 Departure:
-17:30
+05:00
 
-# Expected: System returns a valid route from 4057 to 3180
-#           Travel time reflects afternoon peak conditions

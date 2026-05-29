@@ -1,6 +1,7 @@
 # TC06
-# Scenario: Long route across BALWYN_RD network
-# Purpose: Verify routing handles longer travel paths
+# Scenario: Traffic-Time Effect - Off-Peak vs Peak Pair 2
+# Purpose: Record the estimated travel time across a multi-segment route during an off-peak period.
+# Expected:  The system returns a valid multi-segment route with lower travel time compared to TC07.
 
 Origin:
 3127
@@ -9,7 +10,4 @@ Destination:
 3180
 
 Departure:
-12:00
-
-# Expected: System returns up to 5 routes from 3127 to 3180
-#           Travel times reflect midday traffic conditions
+05:00

@@ -1,16 +1,13 @@
 # TC14
-# Scenario: Route during off-peak late night period
-# Purpose: Verify travel time is faster at low traffic compared to peak hours
+# Scenario: Time Interval Boundary — Before Boundary
+# Purpose: Verify that a departure time immediately before a 15-minute boundary uses the previous traffic interval.
+# Expected: The system returns a valid route and estimated travel time using the traffic data from the previous interval.
 
 Origin:
-970
+4063
 
 Destination:
-3002
+4057
 
 Departure:
-03:30
-
-# Expected: System returns at least 1 and at most 5 routes
-#           Speed should be at or near 60 km/h due to low flow at 03:30
-#           Travel time should be shorter than same route during peak hours
+08:14

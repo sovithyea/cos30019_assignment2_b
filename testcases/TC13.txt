@@ -1,15 +1,13 @@
 # TC13
-# Scenario: Longest route in BARKERS_RD chain
-# Purpose: Verify routing across full connected path
+# Scenario: Directed Graph Behaviour — Reverse Direction
+# Purpose: Verify whether reversing the origin and destination affects route availability or travel time.
+# Expected: The system returns a valid route if one exists. The route and estimated travel time may differ from TC12 because the graph is directed.
 
 Origin:
-3001
+3180
 
 Destination:
-2825
+3127
 
 Departure:
-09:00
-
-# Expected: System returns up to 5 routes from 3001 to 2825
-#           Longer total travel time due to multiple hops
+12:00
