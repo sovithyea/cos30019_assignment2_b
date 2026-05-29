@@ -1,15 +1,13 @@
-# TC09
-# Scenario: Route from HIGH_ST to BURKE_RD corridor during morning peak
-# Purpose: Verify routing across multiple intersections under heavy traffic
+# TC08
+# Scenario: Dynamic Routing - Best Route Change Pait 1
+# Purpose: Verify whether changing the departure time affects the best route or route ranking.
+# Expected: The system returns valid ranked routes, and the estimated travel times or route rankings differ from TC08.
 
 Origin:
 3001
 
 Destination:
-4035
+0970
 
 Departure:
-08:00
-
-# Expected: System returns up to 5 routes from 3001 to 4035
-#           Travel times reflect heavy morning peak congestion at 08:00
+17:30

@@ -1,16 +1,13 @@
 # TC15
-# Scenario: Assignment specification example O/D pair at afternoon peak
-# Purpose: Verify the exact example stated in the assignment works end-to-end
+# Scenario: Time Interval Boundary — At New Boundary
+# Purpose: Verify that a departure time exactly at a 15-minute boundary uses the new traffic interval.
+# Expected: The system returns a valid route and estimated travel time using the traffic data from the new interval.
 
 Origin:
-2000
- 
-Destination:
-3002
- 
-Departure:
-17:30
+4063
 
-# Expected: System returns at least 1 and at most 5 routes
-#           Routes ranked by travel time ascending
-#           Travel times reflect afternoon peak, busiest period in dataset
+Destination:
+4057
+
+Departure:
+08:15

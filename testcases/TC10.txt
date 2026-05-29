@@ -1,15 +1,13 @@
 # TC10
-# Scenario: Route across central network section during evening wind-down
-# Purpose: Verify routing through several intermediate nodes
+# Scenario: Dynamic Routing — Best Route Change Pair 2
+# Purpose: Record the best route, route ranking, and travel time during an off-peak period.
+# Expected: The system returns up to 5 ranked routes and identifies the route with the lowest estimated travel time.
 
 Origin:
-3001
+4063
 
 Destination:
-4034
+4032
 
 Departure:
-21:00
-
-# Expected: System returns up to 5 routes from 3001 to 4034
-#           Travel times reflect evening wind-down traffic
+03:30

@@ -1,6 +1,7 @@
 # TC01
-# Scenario: Short route between directly connected SCATS sites
-# Purpose: Verify routing works correctly for a single-hop route
+# Scenario: Basic Behaviour — Single Valid Route
+# Purpose: Verify that the system can return a valid route when the origin and destination are connected.
+# Expected: Valid route returns, the estimated travel time is greater than 0.00 minutes.
 
 Origin:
 3127
@@ -11,5 +12,3 @@ Destination:
 Departure:
 08:00
 
-# Expected: System returns a valid route from 3127 to 4063
-#           Travel time is positive and reflects morning peak congestion

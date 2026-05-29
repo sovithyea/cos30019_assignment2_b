@@ -1,15 +1,13 @@
 # TC08
-# Scenario: Short route on BARKERS_RD corridor at off-peak time
-# Purpose: Verify routing at low traffic period gives faster travel time
+# Scenario: Dynamic Routing - Best Route Change Pait 1
+# Purpose: Record the best route and route ranking at the first departure time.
+# Expected: The system returns up to 5 ranked routes and identifies the route with the lowest estimated travel time.
 
 Origin:
 3001
 
 Destination:
-3002
+0970
 
 Departure:
-03:30
-
-# Expected: System returns valid route from 3001 to 3002
-#           Speed should be at or near 60 km/h due to low flow at 03:30
+05:00

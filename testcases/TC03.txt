@@ -1,15 +1,13 @@
 # TC03
-# Scenario: Adjacent route on BALWYN_RD corridor
-# Purpose: Verify routing between neighbouring SCATS sites 
+# Scenario: Basic Behaviour - Same Origin and Destination
+# Purpose:  Verify that the system handles cases where the origin and destination are the same.
+# Expected: The system returns a route containing only one site and the estimated travel time is 0.00 minutes.
 
 Origin:
 4063
 
 Destination:
-4057
+4063
 
 Departure:
-17:30
-
-# Expected: System returns a valid route from 4063 to 4057
-#           Single hop, travel time reflects afternoon peak flow
+09:30
