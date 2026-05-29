@@ -2,7 +2,6 @@ from pathlib import Path
 import re
 import sys
 
-# Allow imports from the project root when this script is run directly.
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -10,10 +9,12 @@ from graph.cus1 import find_routes, format_routes
 
 
 TESTCASE_FOLDER = Path(__file__).resolve().parent
+AVAILABLE_MODELS = ("LSTM", "GRU", "CNN")
+MAX_ROUTES = 5
 
 
 def read_testcase(file_path: Path) -> tuple[str, str, str]:
-    """Read Origin, Destination and Departure from one testcase file."""
+    # Read Origin, Destination and Departure from testcase files
     content = file_path.read_text(encoding="utf-8")
 
     origin = re.search(
@@ -21,13 +22,11 @@ def read_testcase(file_path: Path) -> tuple[str, str, str]:
         content,
         flags=re.MULTILINE,
     )
-
     destination = re.search(
         r"^Destination:\s*\n\s*(\S+)",
         content,
         flags=re.MULTILINE,
     )
-
     departure = re.search(
         r"^Departure:\s*\n\s*(\S+)",
         content,
@@ -46,8 +45,37 @@ def read_testcase(file_path: Path) -> tuple[str, str, str]:
     )
 
 
-def run_testcase_file(testcase_file: Path) -> None:
-    """Run one testcase and print detailed route calculations."""
+def read_model_name(value: str) -> str:
+    # Validate the prediction model selected
+    model_name = value.strip().upper()
+
+    if model_name not in AVAILABLE_MODELS:
+        raise ValueError(
+            f"Model must be one of: {', '.join(AVAILABLE_MODELS)}."
+        )
+
+    return model_name
+
+
+def read_route_count(value: str) -> int:
+    # Validate the requested number of routes
+    try:
+        route_count = int(value)
+    except ValueError as error:
+        raise ValueError("Number of routes must be an integer from 1 to 5.") from error
+
+    if not 1 <= route_count <= MAX_ROUTES:
+        raise ValueError("Number of routes must be from 1 to 5.")
+
+    return route_count
+
+
+def run_testcase(
+    testcase_file: Path,
+    model_name: str,
+    route_count: int,
+) -> None:
+    # Run testcase
     print("=" * 90)
     print(testcase_file.stem)
 
@@ -57,13 +85,16 @@ def run_testcase_file(testcase_file: Path) -> None:
         print(f"Origin:      {origin}")
         print(f"Destination: {destination}")
         print(f"Departure:   {departure}")
+        print(f"Model Used:  {model_name}")
+        print(f"Best Routes: {route_count}")
         print()
 
         routes = find_routes(
             origin=origin,
             destination=destination,
             departure_time=departure,
-            k=5,
+            k=route_count,
+            model_name=model_name,
         )
 
         print(format_routes(routes, show_breakdown=True))
@@ -75,40 +106,33 @@ def run_testcase_file(testcase_file: Path) -> None:
 
 
 def main() -> None:
-    """
-    Run one selected testcase or all testcases.
-
-    Examples:
-        python3 testcases/run_testcases.py TC01
-        python3 testcases/run_testcases.py TC01.txt
-        python3 testcases/run_testcases.py
-    """
-    if len(sys.argv) > 1:
-        testcase_name = sys.argv[1]
-
-        if not testcase_name.endswith(".txt"):
-            testcase_name += ".txt"
-
-        testcase_file = TESTCASE_FOLDER / testcase_name
-
-        if not testcase_file.exists():
-            raise FileNotFoundError(
-                f"Cannot find testcase file: {testcase_file}"
-            )
-
-        run_testcase_file(testcase_file)
+    if len(sys.argv) != 4:
+        print(
+            "Usage: python3 testcases/run_testcases.py "
+            "<TCxx.txt> <LSTM|GRU|CNN> <1|2|3|4|5>"
+        )
         return
 
-    testcase_files = sorted(TESTCASE_FOLDER.glob("TC*.txt"))
+    testcase_name = sys.argv[1]
 
-    if not testcase_files:
-        raise FileNotFoundError("No testcase files found in the testcases folder.")
+    if not testcase_name.endswith(".txt"):
+        testcase_name += ".txt"
 
-    for testcase_file in testcase_files:
-        run_testcase_file(testcase_file)
+    testcase_file = TESTCASE_FOLDER / testcase_name
 
-    print("=" * 90)
-    print("All testcases completed.")
+    if not testcase_file.exists():
+        raise FileNotFoundError(
+            f"Cannot find testcase file: {testcase_file}"
+        )
+
+    model_name = read_model_name(sys.argv[2])
+    route_count = read_route_count(sys.argv[3])
+
+    run_testcase(
+        testcase_file=testcase_file,
+        model_name=model_name,
+        route_count=route_count,
+    )
 
 
 if __name__ == "__main__":
