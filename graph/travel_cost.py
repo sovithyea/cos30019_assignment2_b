@@ -6,7 +6,7 @@ from pathlib import Path
 import pandas as pd
 
 
-DEFAULT_MODEL = "GRU"
+DEFAULT_MODEL = "CNN"
 
 INTERVAL_MINUTES = 15
 DAY_SECONDS = 24 * 60 * 60

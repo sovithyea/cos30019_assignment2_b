@@ -1,5 +1,5 @@
 {
-    "default_model": "GRU",
+    "default_model": "CNN",
     "default_departure_time": "08:00",
     "default_number_of_routes": 1,
     "maximum_number_of_routes": 5,
