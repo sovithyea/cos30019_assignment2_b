@@ -14,7 +14,7 @@ MAX_ROUTES = 5
 
 
 def read_testcase(file_path: Path) -> tuple[str, str, str]:
-    """Read Origin, Destination and Departure from one testcase file."""
+    # Read Origin, Destination and Departure from testcase files
     content = file_path.read_text(encoding="utf-8")
 
     origin = re.search(
@@ -46,7 +46,7 @@ def read_testcase(file_path: Path) -> tuple[str, str, str]:
 
 
 def read_model_name(value: str) -> str:
-    """Validate the prediction model selected for the testcase."""
+    # Validate the prediction model selected
     model_name = value.strip().upper()
 
     if model_name not in AVAILABLE_MODELS:
@@ -58,7 +58,7 @@ def read_model_name(value: str) -> str:
 
 
 def read_route_count(value: str) -> int:
-    """Validate the requested number of routes."""
+    # Validate the requested number of routes
     try:
         route_count = int(value)
     except ValueError as error:
@@ -75,7 +75,7 @@ def run_testcase(
     model_name: str,
     route_count: int,
 ) -> None:
-    """Run one testcase using the selected prediction model."""
+    # Run testcase
     print("=" * 90)
     print(testcase_file.stem)
 
@@ -106,11 +106,6 @@ def run_testcase(
 
 
 def main() -> None:
-    """
-    Usage:
-        python3 testcases/run_testcases.py TC07.txt GRU 1
-        python3 testcases/run_testcases.py TC07 GRU 5
-    """
     if len(sys.argv) != 4:
         print(
             "Usage: python3 testcases/run_testcases.py "
