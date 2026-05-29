@@ -43,8 +43,8 @@ BATCH_SIZE = 64
 
 
 def main() -> None:
-    np.random.seed(SEED)
-    tf.random.set_seed(SEED)
+    tf.keras.utils.set_random_seed(SEED)
+    tf.config.experimental.enable_op_determinism()
 
     data = prepare_model_data(save_artifacts=True)
     print_split_summary(data)
