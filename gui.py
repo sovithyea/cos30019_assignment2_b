@@ -22,6 +22,9 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 CONFIG_FILE = PROJECT_ROOT / "config.json"
 NODES_FILE = PROJECT_ROOT / "data" / "route_map" / "final_nodes.csv"
 EDGES_FILE = PROJECT_ROOT / "data" / "route_map" / "final_edges.csv"
+PROCESSED_TRAFFIC_FILE = (
+    PROJECT_ROOT / "data" / "processed" / "traffic_direction_timeseries.csv"
+)
 
 AVAILABLE_MODELS = ("GRU", "CNN", "LSTM")
 CAPACITY_FLOW_PER_HOUR = 1500.0
@@ -126,6 +129,39 @@ def load_map_data() -> tuple[pd.DataFrame, pd.DataFrame]:
     return nodes.reset_index(drop=True), edges.reset_index(drop=True)
 
 
+def load_site_location_reference() -> dict[str, str]:
+    """
+    Load SCATS site ID to intersection/location text from processed data.
+
+    The GUI input remains SCATS ID based. This reference table only helps
+    the user find the correct SCATS ID for a location/intersection.
+    """
+    if not PROCESSED_TRAFFIC_FILE.exists():
+        return {}
+
+    traffic_df = pd.read_csv(PROCESSED_TRAFFIC_FILE)
+
+    if (
+        "site_id" not in traffic_df.columns
+        or "location" not in traffic_df.columns
+    ):
+        return {}
+
+    traffic_df = traffic_df[["site_id", "location"]].dropna().copy()
+    traffic_df["site_id"] = traffic_df["site_id"].apply(normalise_site_id)
+    traffic_df["location"] = traffic_df["location"].astype(str).str.strip()
+
+    location_reference = (
+        traffic_df
+        .drop_duplicates()
+        .groupby("site_id")["location"]
+        .apply(lambda values: " / ".join(sorted(set(values))))
+        .to_dict()
+    )
+
+    return location_reference
+
+
 CONFIG = load_config()
 
 DEFAULT_MODEL = str(CONFIG["default_model"]).upper()
@@ -140,11 +176,24 @@ if DEFAULT_MODEL not in AVAILABLE_MODELS:
     )
 
 nodes_df, edges_df = load_map_data()
+site_location_reference = load_site_location_reference()
 
 node_coordinates = {
     row.site_id: (row.longitude, row.latitude)
     for row in nodes_df.itertuples(index=False)
 }
+
+SCATS_DISPLAY_ROWS = []
+
+for node in nodes_df.sort_values("site_id").itertuples(index=False):
+    location_text = site_location_reference.get(
+        node.site_id,
+        "Location not available",
+    )
+
+    SCATS_DISPLAY_ROWS.append(
+        f"{node.site_id:<8} | {location_text}"
+    )
 
 current_routes = []
 
@@ -432,6 +481,39 @@ def update_model_display(event=None) -> None:
     )
 
 
+def update_scats_reference_filter(*args) -> None:
+    """Filter the SCATS ID reference list by site ID or location text."""
+    search_text = scats_search_var.get().strip().lower()
+
+    site_reference_text.configure(state="normal")
+    site_reference_text.delete("1.0", tk.END)
+
+    site_reference_text.insert(
+        tk.END,
+        "SCATS ID | Intersection / Location\n",
+    )
+    site_reference_text.insert(
+        tk.END,
+        "-" * 70 + "\n",
+    )
+
+    matched_rows = [
+        display_row
+        for display_row in SCATS_DISPLAY_ROWS
+        if search_text in display_row.lower()
+    ]
+
+    for display_row in matched_rows:
+        site_reference_text.insert(tk.END, display_row + "\n")
+
+    site_reference_text.insert(
+        tk.END,
+        f"\nShowing {len(matched_rows)} of {len(SCATS_DISPLAY_ROWS)} sites."
+    )
+
+    site_reference_text.configure(state="disabled")
+
+
 def find_best_routes() -> None:
     """Find routes using the input and the selected prediction model."""
     global current_routes
@@ -513,6 +595,8 @@ def reset_defaults() -> None:
     route_selector.set("")
     route_selector["values"] = []
 
+    scats_search_var.set("")
+
     draw_network()
 
 
@@ -523,7 +607,7 @@ def reset_defaults() -> None:
 root = tk.Tk()
 root.title(CONFIG["window_title"])
 root.geometry(CONFIG["window_size"])
-root.minsize(1150, 720)
+root.minsize(1250, 760)
 
 
 title_label = ttk.Label(
@@ -552,7 +636,7 @@ main_frame.rowconfigure(0, weight=1)
 
 
 # -------------------------------------------------------------------------
-# Left panel: inputs, parameter settings and route results
+# Left panel: inputs, parameter settings, reference list and route results
 # -------------------------------------------------------------------------
 
 left_panel = ttk.Frame(main_frame)
@@ -647,6 +731,71 @@ ttk.Button(
 ).grid(row=11, column=0, sticky="ew")
 
 
+# -------------------------------------------------------------------------
+# SCATS ID reference list
+# -------------------------------------------------------------------------
+
+site_reference_frame = ttk.LabelFrame(
+    left_panel,
+    text="SCATS ID Reference",
+    padding=10,
+)
+site_reference_frame.pack(fill="x", pady=(0, 10))
+
+
+ttk.Label(
+    site_reference_frame,
+    text="Search SCATS ID / Location:",
+).pack(anchor="w")
+
+
+scats_search_var = tk.StringVar()
+
+scats_search_entry = ttk.Entry(
+    site_reference_frame,
+    textvariable=scats_search_var,
+    width=56,
+)
+scats_search_entry.pack(fill="x", pady=(4, 8))
+
+
+site_reference_body = ttk.Frame(site_reference_frame)
+site_reference_body.pack(fill="both", expand=True)
+
+
+site_reference_text = tk.Text(
+    site_reference_body,
+    width=56,
+    height=8,
+    wrap="none",
+    font=("Courier New", 10),
+)
+
+site_reference_scrollbar = ttk.Scrollbar(
+    site_reference_body,
+    orient="vertical",
+    command=site_reference_text.yview,
+)
+
+site_reference_text.configure(
+    yscrollcommand=site_reference_scrollbar.set,
+)
+
+site_reference_text.pack(side="left", fill="both", expand=True)
+site_reference_scrollbar.pack(side="right", fill="y")
+
+scats_search_var.trace_add(
+    "write",
+    update_scats_reference_filter,
+)
+
+update_scats_reference_filter()
+
+
+# -------------------------------------------------------------------------
+# Returned routes and traffic states
+# -------------------------------------------------------------------------
+
 results_frame = ttk.LabelFrame(
     left_panel,
     text="Returned Routes and Traffic States",
@@ -658,7 +807,7 @@ results_frame.pack(fill="both", expand=True)
 result_text = tk.Text(
     results_frame,
     width=56,
-    height=20,
+    height=16,
     wrap="word",
 )
 result_text.pack(side="left", fill="both", expand=True)
