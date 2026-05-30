@@ -1,7 +1,7 @@
 # TC02
-# Scenario: Basic Behaviour — No Valid Route
-# Purpose:  Verify that the system handles valid nodes with no available route between them.
-# Expected: The system reports that no valid route is available and does not crash.
+# Scenario: Basic Behaviour — Invalid Destination Site
+# Purpose: Verify that the system handles a valid origin with an invalid destination SCATS site.
+# Expected: The system reports "Invalid destination SCATS site: 2200" and does not crash.
 
 Origin:
 4063
@@ -11,4 +11,3 @@ Destination:
 
 Departure:
 09:00
-
